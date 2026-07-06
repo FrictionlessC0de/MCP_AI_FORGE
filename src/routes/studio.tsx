@@ -12,6 +12,7 @@ import {
 	CheckCircle2,
 	ChevronDown,
 	Cloud,
+	Copy,
 	Cpu,
 	Database,
 	Eye,
@@ -35,12 +36,13 @@ import {
 	Terminal,
 	Workflow,
 	Wrench,
+	X,
 	Zap,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { generateTool } from "#/server-fns/generate";
 import { invokeTool } from "#/server-fns/sandbox";
-import { listTools } from "#/server-fns/tools";
+import { listTools, getTool, createToolFn } from "#/server-fns/tools";
 
 export const Route = createFileRoute("/studio")({
 	component: Forge,
@@ -203,6 +205,10 @@ function ToolExplorer({
 }) {
 	const [active, setActive] = useState<Category | "All">("All");
 	const [q, setQ] = useState("");
+	const [schemaToolId, setSchemaToolId] = useState<string | null>(null);
+	const [useToolId, setUseToolId] = useState<string | null>(null);
+	const [forking, setForking] = useState<string | null>(null);
+	const queryClient = useQueryClient();
 
 	const { data, isLoading, error } = useQuery({
 		queryKey: ["tools"],
@@ -251,91 +257,152 @@ function ToolExplorer({
 		[active, q, tools],
 	);
 
+	const handleFork = useCallback(async (id: string) => {
+		setForking(id);
+		try {
+			const { tool } = await getTool(id);
+			if (!tool) return;
+			const newId = `tool-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+			await createToolFn({
+				data: {
+					id: newId,
+					name: `${tool.name} (fork)`,
+					summary: tool.summary,
+					description: tool.description,
+					category: tool.category,
+					platforms: tool.platforms,
+					complexity: tool.complexity,
+					accent: tool.accent,
+					schema: tool.schema,
+					version: tool.version,
+				},
+			});
+			queryClient.invalidateQueries({ queryKey: ["tools"] });
+		} catch (e) {
+			console.error("Fork failed:", e);
+		} finally {
+			setForking(null);
+		}
+	}, [queryClient]);
+
 	return (
-		<div className="flex h-[calc(100vh-4.5rem-2.5rem)] flex-col rounded-xl border border-border/60 bg-card/40 glass overflow-hidden">
-			<div className="p-3 border-b border-border/60">
-				<div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-					<Layers className="h-3.5 w-3.5 text-ember" /> Ecosystem
+		<>
+			<div className="flex h-[calc(100vh-4.5rem-2.5rem)] flex-col rounded-xl border border-border/60 bg-card/40 glass overflow-hidden">
+				<div className="p-3 border-b border-border/60">
+					<div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+						<Layers className="h-3.5 w-3.5 text-ember" /> Ecosystem
+					</div>
+					<div className="mt-2 flex items-center gap-2 rounded-md bg-surface-2 px-2.5 py-1.5">
+						<Search className="h-3.5 w-3.5 text-muted-foreground" />
+						<input
+							value={q}
+							onChange={(e) => setQ(e.target.value)}
+							placeholder="github, db, automation…"
+							className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+						/>
+					</div>
 				</div>
-				<div className="mt-2 flex items-center gap-2 rounded-md bg-surface-2 px-2.5 py-1.5">
-					<Search className="h-3.5 w-3.5 text-muted-foreground" />
-					<input
-						value={q}
-						onChange={(e) => setQ(e.target.value)}
-						placeholder="github, db, automation…"
-						className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
-					/>
-				</div>
-			</div>
 
-			<div className="flex flex-col gap-0.5 px-2 py-2 border-b border-border/60">
-				{CATEGORIES.map((c) => {
-					const Icon = c.icon;
-					const isActive = active === c.key;
-					return (
-						<button
-							key={c.key}
-							onClick={() => setActive(c.key)}
-							className={`flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs transition ${
-								isActive
-									? "bg-ember/12 text-foreground"
-									: "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-							}`}
-						>
-							<span className="flex items-center gap-2">
-								<Icon
-									className={`h-3.5 w-3.5 ${isActive ? "text-ember" : ""}`}
+				<div className="flex flex-col gap-0.5 px-2 py-2 border-b border-border/60">
+					{CATEGORIES.map((c) => {
+						const Icon = c.icon;
+						const isActive = active === c.key;
+						return (
+							<button
+								key={c.key}
+								onClick={() => setActive(c.key)}
+								className={`flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs transition ${
+									isActive
+										? "bg-ember/12 text-foreground"
+										: "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+								}`}
+							>
+								<span className="flex items-center gap-2">
+									<Icon
+										className={`h-3.5 w-3.5 ${isActive ? "text-ember" : ""}`}
+									/>
+									{c.label}
+								</span>
+								<span className="font-mono text-[10px] text-muted-foreground">
+									{c.key === "All"
+										? tools.length
+										: tools.filter((t) => t.category === c.key).length}
+								</span>
+							</button>
+						);
+					})}
+				</div>
+
+				<div className="flex-1 overflow-y-auto p-2 space-y-2">
+					{queryError && (
+						<div className="rounded-md bg-red-500/10 p-3 text-xs text-red-600">
+							{queryError}
+						</div>
+					)}
+					{isLoading && (
+						<div className="p-6 text-center text-xs text-muted-foreground animate-flicker">
+							Loading tools…
+						</div>
+					)}
+					{!isLoading &&
+						filtered.map((t) => (
+							<button
+								key={t.id}
+								onClick={() => onSelect(t.id)}
+								className="w-full text-left"
+							>
+								<ToolCard
+									tool={t}
+									selected={t.id === selectedId}
+									onFork={handleFork}
+									onSchema={setSchemaToolId}
+									onUse={setUseToolId}
 								/>
-								{c.label}
-							</span>
-							<span className="font-mono text-[10px] text-muted-foreground">
-								{c.key === "All"
-									? tools.length
-									: tools.filter((t) => t.category === c.key).length}
-							</span>
-						</button>
-					);
-				})}
+							</button>
+						))}
+					{!isLoading && filtered.length === 0 && (
+						<div className="p-6 text-center text-xs text-muted-foreground">
+							No tools yet. Generate one in the Studio.
+						</div>
+					)}
+				</div>
+
+				<div className="border-t border-border/60 p-2">
+					<button className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border/80 px-2 py-2 text-xs text-muted-foreground hover:border-ember/50 hover:text-ember transition">
+						<Plus className="h-3.5 w-3.5" /> Forge a new tool
+					</button>
+				</div>
 			</div>
 
-			<div className="flex-1 overflow-y-auto p-2 space-y-2">
-				{queryError && (
-					<div className="rounded-md bg-red-500/10 p-3 text-xs text-red-600">
-						{queryError}
-					</div>
-				)}
-				{isLoading && (
-					<div className="p-6 text-center text-xs text-muted-foreground animate-flicker">
-						Loading tools…
-					</div>
-				)}
-				{!isLoading &&
-					filtered.map((t) => (
-						<button
-							key={t.id}
-							onClick={() => onSelect(t.id)}
-							className="w-full text-left"
-						>
-							<ToolCard tool={t} selected={t.id === selectedId} />
-						</button>
-					))}
-				{!isLoading && filtered.length === 0 && (
-					<div className="p-6 text-center text-xs text-muted-foreground">
-						No tools yet. Generate one in the Studio.
-					</div>
-				)}
-			</div>
-
-			<div className="border-t border-border/60 p-2">
-				<button className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border/80 px-2 py-2 text-xs text-muted-foreground hover:border-ember/50 hover:text-ember transition">
-					<Plus className="h-3.5 w-3.5" /> Forge a new tool
-				</button>
-			</div>
-		</div>
+			{schemaToolId && (
+				<SchemaModal
+					toolId={schemaToolId}
+					onClose={() => setSchemaToolId(null)}
+				/>
+			)}
+			{useToolId && (
+				<UseModal
+					toolId={useToolId}
+					onClose={() => setUseToolId(null)}
+				/>
+			)}
+		</>
 	);
 }
 
-function ToolCard({ tool, selected }: { tool: Tool; selected: boolean }) {
+function ToolCard({
+	tool,
+	selected,
+	onFork,
+	onSchema,
+	onUse,
+}: {
+	tool: Tool;
+	selected: boolean;
+	onFork: (id: string) => void;
+	onSchema: (id: string) => void;
+	onUse: (id: string) => void;
+}) {
 	const Icon = tool.icon;
 	return (
 		<div
@@ -382,9 +449,9 @@ function ToolCard({ tool, selected }: { tool: Tool; selected: boolean }) {
 				</div>
 			</div>
 			<div className="mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
-				<ActionChip icon={GitFork} label="Fork" />
-				<ActionChip icon={Eye} label="Schema" />
-				<ActionChip icon={Plug} label="Use" primary />
+				<ActionChip icon={GitFork} label="Fork" onClick={() => onFork(tool.id)} />
+				<ActionChip icon={Eye} label="Schema" onClick={() => onSchema(tool.id)} />
+				<ActionChip icon={Plug} label="Use" primary onClick={() => onUse(tool.id)} />
 			</div>
 		</div>
 	);
@@ -394,13 +461,16 @@ function ActionChip({
 	icon: Icon,
 	label,
 	primary,
+	onClick,
 }: {
 	icon: React.ComponentType<{ className?: string }>;
 	label: string;
 	primary?: boolean;
+	onClick?: () => void;
 }) {
 	return (
 		<button
+			onClick={onClick}
 			className={`flex items-center gap-1 rounded px-1.5 py-1 font-mono text-[10px] transition ${
 				primary
 					? "bg-ember/15 text-ember hover:bg-ember/25"
@@ -1303,6 +1373,113 @@ function Insights() {
 					</div>
 				);
 			})}
+		</div>
+	);
+}
+
+/* ---------------------- SCHEMA MODAL ---------------------- */
+
+function SchemaModal({
+	toolId,
+	onClose,
+}: {
+	toolId: string;
+	onClose: () => void;
+}) {
+	const { data, isLoading } = useQuery({
+		queryKey: ["tool", toolId],
+		queryFn: () => getTool(toolId),
+	});
+
+	const tool = data?.tool;
+
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+			<div className="w-full max-w-lg rounded-xl border border-border/60 bg-card p-5 shadow-xl">
+				<div className="flex items-center justify-between mb-4">
+					<div className="flex items-center gap-2 font-display text-sm font-semibold">
+						<Eye className="h-4 w-4 text-ember" /> Schema
+					</div>
+					<button onClick={onClose} className="text-muted-foreground hover:text-foreground transition">
+						<X className="h-4 w-4" />
+					</button>
+				</div>
+				{isLoading && (
+					<div className="py-8 text-center text-xs text-muted-foreground animate-flicker">
+						Loading…
+					</div>
+				)}
+				{tool && (
+					<pre className="max-h-96 overflow-auto rounded-lg bg-background/60 p-3 font-mono text-[11px] leading-relaxed text-foreground/90">
+						{JSON.stringify(JSON.parse(tool.schema || "{}"), null, 2)}
+					</pre>
+				)}
+			</div>
+		</div>
+	);
+}
+
+/* ----------------------- USE MODAL ----------------------- */
+
+function UseModal({
+	toolId,
+	onClose,
+}: {
+	toolId: string;
+	onClose: () => void;
+}) {
+	const { data, isLoading } = useQuery({
+		queryKey: ["tool", toolId],
+		queryFn: () => getTool(toolId),
+	});
+
+	const tool = data?.tool;
+	const mcpConfig = tool?.config?.mcpConfig as string | undefined;
+	const [copied, setCopied] = useState(false);
+
+	const handleCopy = useCallback(() => {
+		if (!mcpConfig) return;
+		navigator.clipboard.writeText(mcpConfig);
+		setCopied(true);
+		setTimeout(() => setCopied(false), 2000);
+	}, [mcpConfig]);
+
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+			<div className="w-full max-w-lg rounded-xl border border-border/60 bg-card p-5 shadow-xl">
+				<div className="flex items-center justify-between mb-4">
+					<div className="flex items-center gap-2 font-display text-sm font-semibold">
+						<Plug className="h-4 w-4 text-ember" /> Use — {tool?.name ?? "…"}
+					</div>
+					<button onClick={onClose} className="text-muted-foreground hover:text-foreground transition">
+						<X className="h-4 w-4" />
+					</button>
+				</div>
+				{isLoading && (
+					<div className="py-8 text-center text-xs text-muted-foreground animate-flicker">
+						Loading…
+					</div>
+				)}
+				{tool && (
+					<>
+						<p className="mb-3 text-[11px] text-muted-foreground">
+							Add this MCP server config to your <code className="rounded bg-background/60 px-1">~/.cursor/mcp.json</code> or <code className="rounded bg-background/60 px-1">.vscode/mcp.json</code>:
+						</p>
+						<pre className="max-h-64 overflow-auto rounded-lg bg-background/60 p-3 font-mono text-[11px] leading-relaxed text-foreground/90">
+							{mcpConfig || "{\n  // No MCP config available\n}"}
+						</pre>
+						<div className="mt-3 flex justify-end">
+							<button
+								onClick={handleCopy}
+								className="flex items-center gap-1.5 rounded-md bg-ember/15 px-3 py-1.5 font-mono text-xs text-ember hover:bg-ember/25 transition"
+							>
+								{copied ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+								{copied ? "Copied" : "Copy config"}
+							</button>
+						</div>
+					</>
+				)}
+			</div>
 		</div>
 	);
 }
