@@ -427,6 +427,9 @@ function Studio({
 	const queryClient = useQueryClient();
 
 	const [generateError, setGenerateError] = useState<string | null>(null);
+	const [language, setLanguage] = useState<"TypeScript" | "JavaScript" | "Python">("TypeScript");
+	const [runtime, setRuntime] = useState<"Node" | "Serverless" | "Edge">("Node");
+	const [target, setTarget] = useState<"Cursor" | "VS Code" | "Universal MCP">("Cursor");
 
 	const generateMutation = useMutation({
 		mutationFn: generateTool,
@@ -477,9 +480,9 @@ function Studio({
 				data: {
 					prompt: promptVal,
 					mode,
-					language: "TypeScript",
-					runtime: "Node",
-					target: "Cursor",
+					language,
+					runtime,
+					target,
 				},
 			});
 
@@ -492,7 +495,7 @@ function Studio({
 			};
 			setTimeout(tick, 700);
 		},
-		[mode, generateMutation],
+		[mode, language, runtime, target, generateMutation],
 	);
 
 	const selectedTool = selectedId;
@@ -558,7 +561,14 @@ function Studio({
 						title="Configuration"
 						hint="Pick runtime, target agents and integrations."
 					/>
-					<Configuration />
+					<Configuration
+						language={language}
+						runtime={runtime}
+						target={target}
+						onLanguageChange={setLanguage}
+						onRuntimeChange={setRuntime}
+						onTargetChange={setTarget}
+					/>
 				</section>
 
 				{/* SECTION C — Generate */}
@@ -771,24 +781,41 @@ Outputs: ${outputs}`;
 	);
 }
 
-function Configuration() {
+function Configuration({
+	language,
+	runtime,
+	target,
+	onLanguageChange,
+	onRuntimeChange,
+	onTargetChange,
+}: {
+	language: "TypeScript" | "JavaScript" | "Python";
+	runtime: "Node" | "Serverless" | "Edge";
+	target: "Cursor" | "VS Code" | "Universal MCP";
+	onLanguageChange: (v: "TypeScript" | "JavaScript" | "Python") => void;
+	onRuntimeChange: (v: "Node" | "Serverless" | "Edge") => void;
+	onTargetChange: (v: "Cursor" | "VS Code" | "Universal MCP") => void;
+}) {
 	const groups = [
 		{
 			label: "Language",
-			options: ["TypeScript", "JavaScript", "Python"],
-			active: "TypeScript",
+			options: ["TypeScript", "JavaScript", "Python"] as const,
+			active: language,
+			setter: onLanguageChange,
 			accent: "ember",
 		},
 		{
 			label: "Runtime",
-			options: ["Node", "Serverless", "Edge"],
-			active: "Node",
+			options: ["Node", "Serverless", "Edge"] as const,
+			active: runtime,
+			setter: onRuntimeChange,
 			accent: "plasma",
 		},
 		{
 			label: "Target",
-			options: ["Cursor", "VS Code", "Universal MCP"],
-			active: "Cursor",
+			options: ["Cursor", "VS Code", "Universal MCP"] as const,
+			active: target,
+			setter: onTargetChange,
 			accent: "violet",
 		},
 	];
@@ -805,6 +832,7 @@ function Configuration() {
 							return (
 								<button
 									key={o}
+									onClick={() => g.setter(o)}
 									className={`rounded-md border px-2.5 py-1 font-mono text-[11px] transition ${
 										active
 											? `${accentClass(g.accent)} border`
