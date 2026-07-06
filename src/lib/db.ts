@@ -12,33 +12,9 @@ const MIGRATIONS = [
 	{
 		version: 1,
 		statements: [
-			`CREATE TABLE IF NOT EXISTS tools (
-				id TEXT PRIMARY KEY,
-				name TEXT NOT NULL UNIQUE,
-				summary TEXT NOT NULL DEFAULT '',
-				description TEXT NOT NULL DEFAULT '',
-				category TEXT NOT NULL DEFAULT 'Custom',
-				platforms TEXT NOT NULL DEFAULT '[]',
-				complexity TEXT NOT NULL DEFAULT 'Low',
-				accent TEXT NOT NULL DEFAULT 'ember',
-				schema TEXT NOT NULL DEFAULT '{}',
-				version TEXT NOT NULL DEFAULT '0.1.0',
-				config TEXT NOT NULL DEFAULT '{}',
-				created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-				updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-			)`,
-			`CREATE TABLE IF NOT EXISTS invocations (
-				id TEXT PRIMARY KEY,
-				tool_id TEXT NOT NULL,
-				input TEXT NOT NULL DEFAULT '',
-				output TEXT NOT NULL DEFAULT '',
-				logs TEXT NOT NULL DEFAULT '[]',
-				latency_ms INTEGER NOT NULL DEFAULT 0,
-				success INTEGER NOT NULL DEFAULT 1,
-				created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-				FOREIGN KEY (tool_id) REFERENCES tools(id)
-			)`,
-			`CREATE INDEX IF NOT EXISTS idx_invocations_tool_id ON invocations(tool_id)`,
+			"CREATE TABLE IF NOT EXISTS tools (id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, summary TEXT NOT NULL DEFAULT '', description TEXT NOT NULL DEFAULT '', category TEXT NOT NULL DEFAULT 'Custom', platforms TEXT NOT NULL DEFAULT '[]', complexity TEXT NOT NULL DEFAULT 'Low', accent TEXT NOT NULL DEFAULT 'ember', schema TEXT NOT NULL DEFAULT '{}', version TEXT NOT NULL DEFAULT '0.1.0', config TEXT NOT NULL DEFAULT '{}', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)",
+			"CREATE TABLE IF NOT EXISTS invocations (id TEXT PRIMARY KEY, tool_id TEXT NOT NULL, input TEXT NOT NULL DEFAULT '', output TEXT NOT NULL DEFAULT '', logs TEXT NOT NULL DEFAULT '[]', latency_ms INTEGER NOT NULL DEFAULT 0, success INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (tool_id) REFERENCES tools(id))",
+			"CREATE INDEX IF NOT EXISTS idx_invocations_tool_id ON invocations(tool_id)",
 		],
 	},
 ];
