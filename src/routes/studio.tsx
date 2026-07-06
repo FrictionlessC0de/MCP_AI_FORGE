@@ -408,8 +408,7 @@ function Studio({
 	onGenerated,
 }: {
 	selectedId: string | null;
-	      onGenerated: (files: Record<string, GeneratedFile>) => void;
-;
+	onGenerated: (files: Record<string, GeneratedFile>) => void;
 }) {
 	const [mode, setMode] = useState<"prompt" | "structured">("prompt");
 	const [generating, setGenerating] = useState(false);
