@@ -1,7 +1,17 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
+  "name": "mcp-forge",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/react-start/server-entry"
+  "main": "@tanstack/react-start/server-entry",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mcp-forge-db",
+      "database_id": "mcp-forge-db"
+    }
+  ],
+  "vars": {
+    "OPENAI_MODEL": "gpt-4o"
+  }
 }
