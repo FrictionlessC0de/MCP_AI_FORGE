@@ -1,0 +1,198 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-ember: var(--ember);
+  --color-ember-glow: var(--ember-glow);
+  --color-plasma: var(--plasma);
+  --color-mint: var(--mint);
+  --color-violet: var(--violet);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+}
+
+:root {
+  --radius: 0.75rem;
+
+  /* Forge palette — obsidian + molten ember + electric plasma */
+  --background: oklch(0.16 0.018 270);
+  --foreground: oklch(0.96 0.01 90);
+
+  --surface-1: oklch(0.20 0.02 270);
+  --surface-2: oklch(0.235 0.022 270);
+  --surface-3: oklch(0.27 0.025 270);
+
+  --card: oklch(0.20 0.02 270);
+  --card-foreground: oklch(0.96 0.01 90);
+  --popover: oklch(0.21 0.022 270);
+  --popover-foreground: oklch(0.96 0.01 90);
+
+  /* ember = molten orange/amber */
+  --ember: oklch(0.74 0.19 52);
+  --ember-glow: oklch(0.82 0.17 65);
+  /* plasma = electric cyan */
+  --plasma: oklch(0.82 0.14 200);
+  --mint: oklch(0.82 0.18 155);
+  --violet: oklch(0.70 0.20 295);
+
+  --primary: var(--ember);
+  --primary-foreground: oklch(0.16 0.018 270);
+
+  --secondary: oklch(0.27 0.025 270);
+  --secondary-foreground: oklch(0.96 0.01 90);
+
+  --muted: oklch(0.24 0.02 270);
+  --muted-foreground: oklch(0.66 0.02 270);
+
+  --accent: oklch(0.30 0.04 270);
+  --accent-foreground: oklch(0.96 0.01 90);
+
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+
+  --border: oklch(0.30 0.025 270 / 60%);
+  --input: oklch(0.27 0.025 270);
+  --ring: var(--ember);
+
+  --gradient-ember: linear-gradient(135deg, oklch(0.74 0.19 52), oklch(0.66 0.22 30));
+  --gradient-plasma: linear-gradient(135deg, oklch(0.82 0.14 200), oklch(0.70 0.20 295));
+  --gradient-forge: radial-gradient(ellipse at top, oklch(0.74 0.19 52 / 22%), transparent 60%),
+                    radial-gradient(ellipse at bottom left, oklch(0.70 0.20 295 / 18%), transparent 55%);
+
+  --shadow-ember: 0 10px 40px -10px oklch(0.74 0.19 52 / 45%);
+  --shadow-glow: 0 0 0 1px oklch(0.74 0.19 52 / 30%), 0 0 30px -5px oklch(0.74 0.19 52 / 40%);
+  --shadow-card: 0 4px 24px -8px oklch(0 0 0 / 50%);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-image: var(--gradient-forge);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: oklch(0.74 0.19 52 / 40%);
+    color: oklch(0.98 0 0);
+  }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.30 0.025 270);
+    border-radius: 8px;
+    border: 2px solid var(--color-background);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: oklch(0.38 0.03 270); }
+}
+
+@layer utilities {
+  .font-display { font-family: var(--font-display); }
+  .font-mono { font-family: var(--font-mono); }
+
+  .text-gradient-ember {
+    background: var(--gradient-ember);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .text-gradient-plasma {
+    background: var(--gradient-plasma);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(oklch(1 0 0 / 3%) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 3%) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .bg-dots {
+    background-image: radial-gradient(oklch(1 0 0 / 6%) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+
+  .glass {
+    background: oklch(0.20 0.02 270 / 70%);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid oklch(1 0 0 / 6%);
+  }
+
+  .ring-ember { box-shadow: var(--shadow-glow); }
+
+  .ember-glow {
+    box-shadow: var(--shadow-ember);
+  }
+
+  @keyframes pulse-ember {
+    0%, 100% { box-shadow: 0 0 0 0 oklch(0.74 0.19 52 / 50%); }
+    50% { box-shadow: 0 0 0 8px oklch(0.74 0.19 52 / 0%); }
+  }
+  .animate-pulse-ember { animation: pulse-ember 2s ease-out infinite; }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .shimmer {
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 8%), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2.5s linear infinite;
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  .animate-flicker { animation: flicker 1.6s ease-in-out infinite; }
+}
