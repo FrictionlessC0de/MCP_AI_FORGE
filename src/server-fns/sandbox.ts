@@ -4,6 +4,8 @@ import { getToolById } from "#/lib/db";
 import { callLlm, GENERATE_SYSTEM_PROMPT } from "#/lib/llm";
 import type { InvokeResult } from "#/lib/schemas";
 
+import { extractJson, sanitizeJson } from "#/lib/json-utils";
+
 const invokeTool = createServerFn({ method: "POST" })
 	.validator(
 		z.object({
@@ -33,7 +35,9 @@ Respond with a JSON object with:
 				`Simulate running ${tool.name} with input: ${data.input}`,
 			);
 
-			const simulated = JSON.parse(llmResult) as {
+			const simulated = JSON.parse(
+				sanitizeJson(extractJson(llmResult)),
+			) as {
 				logs: string[];
 				output: string;
 			};
