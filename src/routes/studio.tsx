@@ -455,11 +455,13 @@ function Studio({
 			setGenerating(true);
 			setStep(0);
 			generateMutation.mutate({
-				prompt: promptVal,
-				mode,
-				language: "TypeScript",
-				runtime: "Node",
-				target: "Cursor",
+				data: {
+					prompt: promptVal,
+					mode,
+					language: "TypeScript",
+					runtime: "Node",
+					target: "Cursor",
+				},
 			});
 
 			let i = 0;
@@ -1133,7 +1135,7 @@ function SandboxView({ selectedId }: { selectedId: string | null }) {
 		setLogs([]);
 		setOutput(null);
 		setRunning(true);
-		invokeMutation.mutate({ toolId: selectedId, input });
+		invokeMutation.mutate({ data: { toolId: selectedId, input } });
 	};
 
 	return (
