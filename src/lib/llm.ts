@@ -1,4 +1,6 @@
-const OPENAI_BASE = "https://api.openai.com/v1";
+function getBaseUrl(): string {
+	return process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1";
+}
 
 function getApiKey(): string {
 	const key = process.env.OPENAI_API_KEY;
@@ -11,7 +13,7 @@ function getModel(): string {
 }
 
 export async function callLlm(system: string, user: string): Promise<string> {
-	const response = await fetch(`${OPENAI_BASE}/chat/completions`, {
+	const response = await fetch(`${getBaseUrl()}/chat/completions`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
