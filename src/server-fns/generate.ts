@@ -3,6 +3,23 @@ import { z } from "zod";
 import { createTool, runMigrations } from "#/lib/db";
 import { callLlm, GENERATE_SYSTEM_PROMPT } from "#/lib/llm";
 
+function extractJson(raw: string): string {
+	const cleaned = raw
+		.replace(/```json\s*/gi, "")
+		.replace(/```\s*$/gm, "")
+		.trim();
+	const start = cleaned.indexOf("{");
+	const end = cleaned.lastIndexOf("}");
+	if (start !== -1 && end !== -1) {
+		return cleaned.slice(start, end + 1);
+	}
+	return cleaned;
+}
+
+function sanitizeJson(raw: string): string {
+	return raw.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
+}
+
 const generateTool = createServerFn({ method: "POST" })
 	.validator(
 		z.object({
@@ -23,7 +40,9 @@ const generateTool = createServerFn({ method: "POST" })
 					: data.prompt;
 
 			const raw = await callLlm(GENERATE_SYSTEM_PROMPT, prompt);
-			const generated = JSON.parse(raw) as {
+			const generated = JSON.parse(
+				sanitizeJson(extractJson(raw)),
+			) as {
 				name: string;
 				summary: string;
 				description: string;
