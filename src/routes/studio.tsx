@@ -257,10 +257,10 @@ function ToolExplorer({
 		[active, q, tools],
 	);
 
-	const handleFork = useCallback(async (id: string) => {
-		setForking(id);
+	const handleFork = useCallback(async (toolId: string) => {
+		setForking(toolId);
 		try {
-			const { tool } = await getTool(id);
+			const { tool } = await getTool({ data: toolId });
 			if (!tool) return;
 			const newId = `tool-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 			await createToolFn({
@@ -1388,7 +1388,7 @@ function SchemaModal({
 }) {
 	const { data, isLoading } = useQuery({
 		queryKey: ["tool", toolId],
-		queryFn: () => getTool(toolId),
+		queryFn: () => getTool({ data: toolId }),
 	});
 
 	const tool = data?.tool;
@@ -1430,7 +1430,7 @@ function UseModal({
 }) {
 	const { data, isLoading } = useQuery({
 		queryKey: ["tool", toolId],
-		queryFn: () => getTool(toolId),
+		queryFn: () => getTool({ data: toolId }),
 	});
 
 	const tool = data?.tool;
