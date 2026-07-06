@@ -847,62 +847,7 @@ function Configuration({
 				</div>
 			))}
 
-			<div className="flex items-center gap-3 pt-1">
-				<div className="w-20 text-[11px] uppercase tracking-wider text-muted-foreground">
-					Auth
-				</div>
-				<Toggle label="OAuth required" on />
-				<Toggle label="API key" />
-				<Toggle label="Rate limit" on />
-			</div>
-
-			<div className="flex items-center gap-3">
-				<div className="w-20 text-[11px] uppercase tracking-wider text-muted-foreground">
-					Integrations
-				</div>
-				<div className="flex flex-wrap gap-1.5">
-					{[
-						{ label: "GitHub", icon: Github, on: true },
-						{ label: "Notion", icon: BookText, on: false },
-						{ label: "Slack", icon: Briefcase, on: true },
-						{ label: "Postgres", icon: Database, on: false },
-						{ label: "Custom", icon: Plus, on: false },
-					].map(({ label, icon: Icon, on }) => (
-						<button
-							key={label}
-							className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] transition ${
-								on
-									? "border-mint/40 bg-mint/10 text-mint"
-									: "border-border/60 bg-surface-2 text-muted-foreground hover:text-foreground"
-							}`}
-						>
-							<Icon className="h-3 w-3" /> {label}
-						</button>
-					))}
-				</div>
-			</div>
 		</div>
-	);
-}
-
-function Toggle({ label, on }: { label: string; on?: boolean }) {
-	const [v, setV] = useState(!!on);
-	return (
-		<button
-			onClick={() => setV(!v)}
-			className="flex items-center gap-2 text-[11px]"
-		>
-			<span
-				className={`relative h-4 w-7 rounded-full transition ${v ? "bg-ember" : "bg-surface-3"}`}
-			>
-				<span
-					className={`absolute top-0.5 h-3 w-3 rounded-full bg-background transition-all ${v ? "left-3.5" : "left-0.5"}`}
-				/>
-			</span>
-			<span className={v ? "text-foreground" : "text-muted-foreground"}>
-				{label}
-			</span>
-		</button>
 	);
 }
 
