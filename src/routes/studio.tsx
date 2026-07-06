@@ -40,7 +40,7 @@ import {
 import { useCallback, useMemo, useState } from "react";
 import { generateTool } from "#/server-fns/generate";
 import { invokeTool } from "#/server-fns/sandbox";
-import { createToolFn, listTools } from "#/server-fns/tools";
+import { listTools } from "#/server-fns/tools";
 
 export const Route = createFileRoute("/studio")({
 	component: Forge,
@@ -204,10 +204,16 @@ function ToolExplorer({
 	const [active, setActive] = useState<Category | "All">("All");
 	const [q, setQ] = useState("");
 
-	const { data, isLoading } = useQuery({
+	const { data, isLoading, error } = useQuery({
 		queryKey: ["tools"],
 		queryFn: () => listTools(),
 	});
+
+	const queryError = error
+		? String(error)
+		: data?.error
+			? data.error
+			: null;
 
 	const tools: Tool[] = useMemo(() => {
 		const raw = data?.tools ?? [];
@@ -293,6 +299,11 @@ function ToolExplorer({
 			</div>
 
 			<div className="flex-1 overflow-y-auto p-2 space-y-2">
+				{queryError && (
+					<div className="rounded-md bg-red-500/10 p-3 text-xs text-red-600">
+						{queryError}
+					</div>
+				)}
 				{isLoading && (
 					<div className="p-6 text-center text-xs text-muted-foreground animate-flicker">
 						Loading tools…
@@ -415,30 +426,38 @@ function Studio({
 	const [step, setStep] = useState(0);
 	const queryClient = useQueryClient();
 
+	const [generateError, setGenerateError] = useState<string | null>(null);
+
 	const generateMutation = useMutation({
 		mutationFn: generateTool,
 		onSuccess: (result) => {
 			setGenerating(false);
 			setStep(0);
-      if (result.tool) {
-        queryClient.invalidateQueries({ queryKey: ["tools"] });
-        if (result.generated) {
-          const cfg = result.tool.config as Record<string, string> | undefined;
-          onGenerated({
-            [result.tool.id]: {
-              id: result.tool.id,
-              serverCode: cfg?.serverCode ?? "",
-              mcpConfig: cfg?.mcpConfig ?? "",
-              readme: cfg?.readme ?? "",
-              packageJson: cfg?.packageJson ?? "",
-            },
-          });
-        }
-      }
+			if (result.error) {
+				setGenerateError(result.error);
+				return;
+			}
+			setGenerateError(null);
+			if (result.tool) {
+				queryClient.invalidateQueries({ queryKey: ["tools"] });
+				if (result.generated) {
+					const cfg = result.tool.config as Record<string, string> | undefined;
+					onGenerated({
+						[result.tool.id]: {
+							id: result.tool.id,
+							serverCode: cfg?.serverCode ?? "",
+							mcpConfig: cfg?.mcpConfig ?? "",
+							readme: cfg?.readme ?? "",
+							packageJson: cfg?.packageJson ?? "",
+						},
+					});
+				}
+			}
 		},
-		onError: () => {
+		onError: (err) => {
 			setGenerating(false);
 			setStep(0);
+			setGenerateError(String(err));
 		},
 	});
 
@@ -602,10 +621,9 @@ function Studio({
 							})}
 						</div>
 
-						{generateMutation.isError && (
-							<div className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
-								Generation failed:{" "}
-								{(generateMutation.error as Error)?.message ?? "Unknown error"}
+						{generateError && (
+							<div className="rounded-md bg-red-500/10 p-3 text-xs text-red-600">
+								Generation failed: {generateError}
 							</div>
 						)}
 					</div>
@@ -1115,6 +1133,10 @@ function SandboxView({ selectedId }: { selectedId: string | null }) {
 		mutationFn: invokeTool,
 		onSuccess: (result) => {
 			setRunning(false);
+			if (result.error) {
+				setLogs((prev) => [...prev, `✗ ${result.error}`]);
+				return;
+			}
 			if (result.result) {
 				setLogs(result.result.logs.map((l) => l.line));
 				try {
@@ -1124,9 +1146,9 @@ function SandboxView({ selectedId }: { selectedId: string | null }) {
 				}
 			}
 		},
-		onError: () => {
+		onError: (err) => {
 			setRunning(false);
-			setLogs((prev) => [...prev, "✗ invocation failed"]);
+			setLogs((prev) => [...prev, `✗ invocation failed: ${String(err)}`]);
 		},
 	});
 
